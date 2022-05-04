@@ -4,7 +4,9 @@ from utils.topo import topo
 from utils.scripts import *
 
 if __name__ == "__main__":
-    os.system("sudo pwd")
+
+    print("使用root用户运行, 并分配好足够的 hugepage! 任意键继续")
+    input()
 
     # 1. 创建拓扑
     tp = topo()
@@ -13,8 +15,9 @@ if __name__ == "__main__":
     run_ovs_docker(tp)
 
     # 3. 创建 veth peer，并挂载到对应的容器
+    time.sleep(60)      # 等待容器启动 OVS
     mount_veth_peer(tp)
+    time.sleep(5)
 
     # 4. 开始维护链路（通断与延迟）
     tp.update_link_delay()
-

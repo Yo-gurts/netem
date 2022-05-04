@@ -4,9 +4,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 
 
-REDIS_HOST = "192.168.1.196"
+REDIS_HOST = "192.168.1.37"
 REDIS_PORT = 6379
-REDIS_PASSWORD = "a123456"
+REDIS_PASSWORD = "uEstC318.#"
 
 SLOT_NUMS = 6666    # 仿真的时隙数量
 
@@ -28,6 +28,7 @@ class topo:
             self.net_topo[node] = links[node].split(",")
 
         self.num_sw = len(self.net_topo)
+        print(f"there are {self.num_sw} sw!")
 
         for sw1 in self.net_topo:
             for sw2 in self.net_topo[sw1]:
@@ -41,6 +42,7 @@ class topo:
         scripts = dict()
 
         for t in range(3):
+            print(f"update link delay of slot: {t}")
             for sw in self.net_topo:
                 scripts[sw] = ""
 
@@ -87,14 +89,14 @@ class topo:
             #         continue
             #     print(f"sudo docker exec -it s{sw} bash -c \"{scripts[sw]}\"")
 
+            all_task = []
             with ThreadPoolExecutor(max_workers=66) as pool:
-                all_task = []
                 for sw in scripts:
                     if scripts[sw] == "":
                         continue
                     all_task.append(pool.submit(os.system,
                       f"sudo docker exec -it s{sw} bash -c \"{scripts[sw]}\""))
+                wait(all_task, return_when=ALL_COMPLETED)
 
-            wait(all_task, return_when=ALL_COMPLETED)
             time.sleep(1)
 

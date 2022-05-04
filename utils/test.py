@@ -1,8 +1,8 @@
 import redis
 
-REDIS_HOST = "192.168.1.196"
+REDIS_HOST = "192.168.1.37"
 REDIS_PORT = 6379
-REDIS_PASSWORD = "a123456"
+REDIS_PASSWORD = "uEstC318.#"
 
 if __name__ == "__main__":
     r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, password=REDIS_PASSWORD)

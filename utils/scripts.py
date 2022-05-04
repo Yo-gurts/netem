@@ -3,10 +3,8 @@ from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 from utils.topo import topo
 
 
-# OVSLOG_DIR = "/root/logfile/"
-# # SCRIPT_DIR = "/root/scripts/"
-OVSLOG_DIR = "/home/s/tmp/logfile/"
-SCRIPT_DIR = "/home/s/tmp/scripts/"
+OVSLOG_DIR = "/root/logfile/"
+SCRIPT_DIR = "/root/scripts/"
 
 
 # 启动 OVS 容器
@@ -19,7 +17,7 @@ def run_ovs_docker(tp:topo):
         _write_init_ovs_script(filename, sw_no)
 
         print(f"created ovs container: s{sw_no}")
-        os.system(f"sudo docker create -it --name=s{sw_no} --privileged \
+        os.system(f"sudo docker create -it --name=s{sw_no} --net=none --privileged \
                 -v /dev/hugepages:/dev/hugepages \
                 -v {OVSLOG_DIR}:/root/logfile \
                 -v {SCRIPT_DIR}:/root/script \
@@ -50,7 +48,7 @@ docker exec -it s{sw1} tc qdisc add dev {p1_2} root netem delay 1
 docker exec -it s{sw2} tc qdisc add dev {p2_1} root netem delay 1
 """)
 
-    # os.system(f"sudo sh {filename}")
+    os.system(f"sudo sh {filename}")
 
 
 
@@ -98,14 +96,15 @@ ifconfig s{sw_no} {ip4} netmask 255.255.0.0 up
 route add default dev s{sw_no}
 
 # 设置 openflow, 才可连接ONOS控制器, 只能用OpenFlow13
-ovs-vsctl set bridge s{sw_no} protocols=OpenFlow13
+# ovs-vsctl set bridge s{sw_no} protocols=OpenFlow13
 
 # fail-mode 可设置为standalone, secure
 # standalone: ovs会自动学习如何转发。
 # secure: 无法连接控制器时, 只按本地流表转发, 若无法匹配则丢弃。
-ovs-vsctl set-fail-mode s{sw_no} secure
+# ovs-vsctl set-fail-mode s{sw_no} secure
 
 # 本地流表设置
+ovs-ofctl del-flows s{sw_no}   # 删除所有流表
 ovs-ofctl add-flow s{sw_no} "ip,nw_dst={ip4} action=output:LOCAL"
 ovs-ofctl add-flow s{sw_no} "arp,nw_dst={ip4} action=output:LOCAL"
 """)
