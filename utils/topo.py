@@ -1,3 +1,4 @@
+# coding=utf-8
 import os
 import redis
 import time
@@ -41,7 +42,8 @@ class topo:
     def update_link_delay(self):
         scripts = dict()
 
-        for t in range(3):
+        for t in range(30):
+            start = time.time()
             print(f"update link delay of slot: {t}")
             for sw in self.net_topo:
                 scripts[sw] = ""
@@ -84,19 +86,38 @@ class topo:
                         scripts[sw2] += f"tc qdisc change dev s{sw2}-s{sw1} root netem delay {d};"
                     continue
 
-            # for sw in scripts:
-            #     if scripts[sw] == "":
-            #         continue
-            #     print(f"sudo docker exec -it s{sw} bash -c \"{scripts[sw]}\"")
+            if t % 10 == 0:
+                # 每10秒更新一次流表信息
+                pass
 
-            all_task = []
-            with ThreadPoolExecutor(max_workers=66) as pool:
-                for sw in scripts:
-                    if scripts[sw] == "":
-                        continue
-                    all_task.append(pool.submit(os.system,
-                      f"sudo docker exec -it s{sw} bash -c \"{scripts[sw]}\""))
-                wait(all_task, return_when=ALL_COMPLETED)
+            ###################################################################
+            # all_task = []
+            # with ThreadPoolExecutor(max_workers=66) as pool:
+            #     for sw in scripts:
+            #         if scripts[sw] == "":
+            #             continue
+            #         all_task.append(pool.submit(os.system,
+            #           f"sudo docker exec -it s{sw} bash -c \"{scripts[sw]}\""))
+            #     wait(all_task, return_when=ALL_COMPLETED)
 
-            time.sleep(1)
+            ###################################################################
+            for sw in scripts:
+                if scripts[sw] == "":
+                    continue
+                os.system(f"sudo docker exec -d s{sw} /bin/bash -c \"{scripts[sw]}\" &")
+                # print(f"sudo docker exec -it s{sw} /bin/bash -c \"{scripts[sw]}\" &")
+
+            ###################################################################
+
+            time.sleep(0.9)
+            end = time.time()
+
+            print("update link delay cost time: ", end - start)
+
+    def deliever_flow(self, src:str, dst:str, route:dict):
+        srcip = f"192.168.{src[:2]}.{int(src[2:])}"
+        dstip = f"192.168.{dst[:2]}.{int(dst[2:])}"
+
+        path = route['0-10']['path']
+        pass
 

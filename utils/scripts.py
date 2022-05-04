@@ -1,4 +1,7 @@
+# coding=utf-8
 import os
+import json
+import requests
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 from utils.topo import topo
 
@@ -23,7 +26,7 @@ def run_ovs_docker(tp:topo):
                 -v {SCRIPT_DIR}:/root/script \
                 ovsdpdk > /dev/null")
         os.system(f"sudo docker start s{sw_no} > /dev/null")
-        os.system(f"sudo docker exec -it s{sw_no} sh /root/script/s{sw_no}_ovs_init.sh > /dev/null")
+        os.system(f"sudo docker exec -it s{sw_no} /bin/bash /root/script/s{sw_no}_ovs_init.sh > /dev/null")
 
 
 # 创建 veth peer，并挂载到对应的容器
@@ -109,3 +112,29 @@ ovs-ofctl add-flow s{sw_no} "ip,nw_dst={ip4} action=output:LOCAL"
 ovs-ofctl add-flow s{sw_no} "arp,nw_dst={ip4} action=output:LOCAL"
 """)
 
+
+def request_route(src:str, dst:str, isDisjoint:str):
+    url = "http://192.168.1.37:8888/get-routing"
+    body = {"srcSatellite":f"{src}", "dstSatellite":f"{dst}", "isDisjoint":f"{isDisjoint}" }
+
+    response = requests.request("POST", url, data=body)
+    if response.status_code == 200:
+        route = json.loads(response.content)
+        return route
+    else:
+        print("request route error !!!!!")
+
+
+def request_rand_route():
+    url = "http://192.168.1.37:8888/get-random-routing"
+
+    response = requests.request("POST", url)
+
+    if response.status_code == 200:
+        src = response.content[:4].decode('utf-8')
+        dst = response.content[5:9].decode('utf-8')
+        route = json.loads(response.content[10:])
+        # print(route['0-10'])
+        return src, dst, route
+    else:
+        print("request rand route error !!!!!")
